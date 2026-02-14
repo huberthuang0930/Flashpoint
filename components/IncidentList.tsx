@@ -36,7 +36,7 @@ export default function IncidentList({
       <Card className="bg-zinc-900/90 border-zinc-700 text-white backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-zinc-400 text-sm">
-            <span className="animate-pulse">Loading CAL FIRE incidents...</span>
+            <span className="animate-pulse">Loading satellite fire detections...</span>
           </div>
         </CardContent>
       </Card>
@@ -48,7 +48,7 @@ export default function IncidentList({
       <Card className="bg-zinc-900/90 border-zinc-700 text-white backdrop-blur-sm">
         <CardContent className="p-4">
           <p className="text-zinc-400 text-sm">
-            No active CAL FIRE incidents found.
+            No active fire detections found. Satellite data updates every ~3 hours.
           </p>
         </CardContent>
       </Card>
@@ -60,23 +60,26 @@ export default function IncidentList({
       <CardHeader className="pb-2 pt-3 px-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
-            <span className="text-red-500">&#9679;</span> Live Incidents
+            <span className="text-red-500 animate-pulse">&#9679;</span> Live Fire Detections
           </CardTitle>
           <Badge
             variant="outline"
-            className="text-[10px] px-1.5 py-0 border-zinc-600 text-zinc-400"
+            className="text-[10px] px-1.5 py-0 border-purple-600 text-purple-400"
           >
-            {incidents.length} active
+            {incidents.length} clusters
           </Badge>
         </div>
+        <p className="text-[10px] text-zinc-500 mt-0.5">
+          NASA FIRMS satellite hotspots (VIIRS)
+        </p>
       </CardHeader>
       <CardContent className="px-2 pb-2 space-y-1 max-h-[50vh] overflow-y-auto scrollbar-thin">
         {incidents.map((enriched) => {
-          const { incident, calfire, nws, perimeter, source } = enriched;
+          const { incident, calfire, nws, perimeter, firms, source } = enriched;
           const isSelected = selectedId === incident.id;
           const acres = calfire?.acres ?? perimeter?.acres ?? null;
           const county = calfire?.county ?? null;
-          const updatedAt = calfire?.updatedAt ?? null;
+          const updatedAt = calfire?.updatedAt ?? firms?.lastSeen ?? null;
 
           return (
             <button
@@ -94,6 +97,11 @@ export default function IncidentList({
                     <span className="text-xs font-semibold text-white truncate">
                       {incident.name}
                     </span>
+                    {source === "firms" && (
+                      <Badge className="bg-purple-700 text-[9px] px-1 py-0 shrink-0">
+                        SAT
+                      </Badge>
+                    )}
                     {perimeter?.geometry && (
                       <Badge className="bg-green-800 text-[9px] px-1 py-0 shrink-0">
                         PERIM
@@ -116,7 +124,17 @@ export default function IncidentList({
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {acres != null && (
+                    {firms && (
+                      <>
+                        <span className="text-[10px] text-purple-300">
+                          {firms.pointCount} det.
+                        </span>
+                        <span className="text-[10px] text-orange-400">
+                          {firms.maxFrp.toFixed(0)} MW
+                        </span>
+                      </>
+                    )}
+                    {!firms && acres != null && (
                       <span className="text-[10px] text-zinc-400">
                         {acres.toLocaleString()} ac
                       </span>
@@ -131,9 +149,6 @@ export default function IncidentList({
                         {county}
                       </span>
                     )}
-                    <span className="text-[9px] text-zinc-600">
-                      {source === "merged" ? "CAL+ArcGIS" : source === "arcgis" ? "ArcGIS" : "CAL FIRE"}
-                    </span>
                   </div>
                 </div>
                 {updatedAt && (

@@ -65,6 +65,8 @@ export default function Home() {
   const [liveCalfire, setLiveCalfire] = useState<EnrichedIncident["calfire"] | null>(null);
   const [liveNws, setLiveNws] = useState<NwsEnrichment | null>(null);
   const [livePerimeter, setLivePerimeter] = useState<EnrichedIncident["perimeter"] | null>(null);
+  const [liveFirms, setLiveFirms] = useState<EnrichedIncident["firms"] | null>(null);
+  const [firmsHotspots, setFirmsHotspots] = useState<{ lat: number; lon: number; frp: number }[]>([]);
 
   // ===== UI state =====
   const [windShiftEnabled, setWindShiftEnabled] = useState(false);
@@ -103,14 +105,19 @@ export default function Home() {
     loadScenarios();
   }, []);
 
-  // ===== Fetch live incidents =====
+  // ===== Fetch live incidents (FIRMS satellite data) =====
   const fetchLiveIncidents = useCallback(async () => {
     setLiveLoading(true);
     try {
-      const res = await fetch("/api/incidents/enriched?limit=15");
+      const res = await fetch("/api/fires/live?days=2&sources=VIIRS_SNPP_NRT,VIIRS_NOAA20_NRT&limit=20&nwsEnrich=3");
       const data = await res.json();
       const incidents: EnrichedIncident[] = data.incidents || [];
       setLiveIncidents(incidents);
+
+      // Store raw hotspot points for map heat layer
+      if (data.hotspotPoints) {
+        setFirmsHotspots(data.hotspotPoints);
+      }
 
       // If we have a selected live incident, update it with fresh data
       if (selectedLiveIncident) {
@@ -125,6 +132,7 @@ export default function Home() {
           setLiveCalfire(updated.calfire);
           setLiveNws(updated.nws);
           setLivePerimeter(updated.perimeter);
+          setLiveFirms(updated.firms);
         }
       }
     } catch (err) {
@@ -161,6 +169,8 @@ export default function Home() {
         setLiveCalfire(null);
         setLiveNws(null);
         setLivePerimeter(null);
+        setLiveFirms(null);
+        setFirmsHotspots([]);
         setSelectedLiveIncident(null);
 
         const scenario = scenarios.find((s) => s.id === selectedScenarioId);
@@ -215,6 +225,7 @@ export default function Home() {
       setLiveCalfire(enriched.calfire);
       setLiveNws(enriched.nws);
       setLivePerimeter(enriched.perimeter);
+      setLiveFirms(enriched.firms);
 
       // Clear stale computed data
       setEnvelopes([]);
@@ -398,6 +409,7 @@ export default function Home() {
           envelopes={envelopes}
           assets={assets}
           perimeterPolygon={mode === "live" ? livePerimeter?.geometry ?? null : null}
+          firmsHotspots={mode === "live" ? firmsHotspots : undefined}
         />
 
         {/* Left panel */}
@@ -419,6 +431,7 @@ export default function Home() {
             calfire={mode === "live" ? liveCalfire : undefined}
             nws={mode === "live" ? liveNws : undefined}
             perimeter={mode === "live" ? livePerimeter : undefined}
+            firms={mode === "live" ? liveFirms : undefined}
           />
 
           {/* Explain panel */}

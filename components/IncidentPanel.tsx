@@ -25,6 +25,14 @@ interface IncidentPanelProps {
     source: string;
     incidentNumber: string | null;
   } | null;
+  /** NASA FIRMS cluster info (only in live mode) */
+  firms?: {
+    pointCount: number;
+    maxFrp: number;
+    totalFrp: number;
+    lastSeen: string;
+    satellites: string[];
+  } | null;
 }
 
 function WindArrow({ degrees }: { degrees: number }) {
@@ -47,6 +55,7 @@ export default function IncidentPanel({
   calfire,
   nws,
   perimeter,
+  firms,
 }: IncidentPanelProps) {
   if (!incident) {
     return (
@@ -174,6 +183,43 @@ export default function IncidentPanel({
             <span className="text-zinc-600 text-[10px]">
               via {perimeter.source}
             </span>
+          </div>
+        )}
+
+        {/* FIRMS satellite detection info (live mode) */}
+        {firms && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            <Badge className="bg-purple-700 text-[10px] px-1.5 py-0">
+              SATELLITE
+            </Badge>
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-400">Detections:</span>
+              <span className="text-purple-300 font-semibold">
+                {firms.pointCount}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-400">Max FRP:</span>
+              <span className="text-orange-400 font-semibold">
+                {firms.maxFrp.toFixed(1)} MW
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-400">Last seen:</span>
+              <span className="text-zinc-200">
+                {new Date(firms.lastSeen).toLocaleString([], {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+            {firms.satellites.length > 0 && (
+              <span className="text-zinc-600 text-[10px]">
+                via {firms.satellites.join(", ")}
+              </span>
+            )}
           </div>
         )}
 
