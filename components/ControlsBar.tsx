@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface ControlsBarProps {
-  aiEnabled: boolean;
-  onToggleAI: () => void;
   onRefresh: () => void;
   onOpenBrief: () => void;
   lastUpdated: Date | null;
@@ -14,8 +12,6 @@ interface ControlsBarProps {
 }
 
 export default function ControlsBar({
-  aiEnabled,
-  onToggleAI,
   onRefresh,
   onOpenBrief,
   lastUpdated,
@@ -44,20 +40,6 @@ export default function ControlsBar({
         </div>
 
         <div className="w-px h-6 bg-zinc-700" />
-
-        {/* AI Insights Toggle */}
-        <Button
-          variant={aiEnabled ? "default" : "outline"}
-          size="sm"
-          onClick={onToggleAI}
-          className={`text-xs h-8 ${
-            aiEnabled
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800"
-          }`}
-        >
-          AI {aiEnabled ? "ON" : "OFF"}
-        </Button>
 
         {/* Refresh */}
         <Button

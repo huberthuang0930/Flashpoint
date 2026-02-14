@@ -10,8 +10,7 @@ interface AIInsightsPanelProps {
   insights: AIInsight[];
   isLoading: boolean;
   hasRun: boolean;
-  onRunAI: () => void;
-  aiEnabled: boolean;
+  onRunAI: (forceRefresh?: boolean) => void;
   canRun: boolean;
 }
 
@@ -104,7 +103,6 @@ export default function AIInsightsPanel({
   isLoading,
   hasRun,
   onRunAI,
-  aiEnabled,
   canRun,
 }: AIInsightsPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -151,21 +149,17 @@ export default function AIInsightsPanel({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={onRunAI}
-                    disabled={!canRun || !aiEnabled || isLoading}
+                    onClick={() => onRunAI(true)}
+                    disabled={!canRun || isLoading}
                     className="text-[10px] text-blue-400 hover:text-blue-300 h-5 px-2"
                   >
-                    Re-analyze
+                    ↻ Refresh
                   </Button>
                 </div>
               </>
             ) : !hasRun ? (
               <div className="text-center py-4">
-                {!aiEnabled ? (
-                  <p className="text-xs text-zinc-500 mb-2">
-                    AI insights are disabled
-                  </p>
-                ) : !canRun ? (
+                {!canRun ? (
                   <p className="text-xs text-zinc-500 mb-2">
                     Select a fire and wait for data to load
                   </p>
@@ -175,8 +169,8 @@ export default function AIInsightsPanel({
                       Click below to analyze this fire using real NASA FIRMS satellite data
                     </p>
                     <Button
-                      onClick={onRunAI}
-                      disabled={!canRun || !aiEnabled || isLoading}
+                      onClick={() => onRunAI(false)}
+                      disabled={!canRun || isLoading}
                       className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 h-8"
                     >
                       Analyze Fire
@@ -191,8 +185,8 @@ export default function AIInsightsPanel({
                 </p>
                 <Button
                   variant="ghost"
-                  onClick={onRunAI}
-                  disabled={!canRun || !aiEnabled || isLoading}
+                  onClick={() => onRunAI(true)}
+                  disabled={!canRun || isLoading}
                   className="text-xs text-blue-400 hover:text-blue-300"
                 >
                   Try again

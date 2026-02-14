@@ -67,8 +67,10 @@ export default function Home() {
   const [liveFirms, setLiveFirms] = useState<EnrichedIncident["firms"] | null>(null);
   const [firmsHotspots, setFirmsHotspots] = useState<{ lat: number; lon: number; frp: number }[]>([]);
 
+  // ===== AI insights cache (by incident ID) =====
+  const aiInsightsCache = useRef<Map<string, AIInsight[]>>(new Map());
+
   // ===== UI state =====
-  const [aiEnabled, setAIEnabled] = useState(true);
   const [briefOpen, setBriefOpen] = useState(false);
   const [briefMarkdown, setBriefMarkdown] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -273,15 +275,19 @@ export default function Home() {
     fetchLiveIncidents();
   }, [refreshData, fetchLiveIncidents]);
 
-  // ===== Manual AI insights trigger =====
-  const handleRunAI = useCallback(async () => {
+  // ===== Manual AI insights trigger (with caching) =====
+  const handleRunAI = useCallback(async (forceRefresh = false) => {
     if (!incident || !weather || !riskScore || !cards.length) {
       console.warn("Cannot run AI: missing required data");
       return;
     }
 
-    if (!aiEnabled) {
-      console.warn("AI is disabled");
+    // Check cache first (unless forcing refresh)
+    if (!forceRefresh && aiInsightsCache.current.has(incident.id)) {
+      const cached = aiInsightsCache.current.get(incident.id)!;
+      console.log(`[AI] Using cached insights for ${incident.name}`);
+      setAIInsights(cached);
+      setAIHasRun(true);
       return;
     }
 
@@ -301,14 +307,20 @@ export default function Home() {
         }),
       });
       const aiData = await aiRes.json();
-      setAIInsights(aiData.insights || []);
+      const insights = aiData.insights || [];
+
+      // Cache the results
+      aiInsightsCache.current.set(incident.id, insights);
+      setAIInsights(insights);
+
+      console.log(`[AI] Generated and cached ${insights.length} insights for ${incident.name}`);
     } catch (err) {
       console.error("AI insights error:", err);
       setAIInsights([]);
     } finally {
       setAILoading(false);
     }
-  }, [incident, weather, riskScore, cards, spreadExplain, aiEnabled]);
+  }, [incident, weather, riskScore, cards, spreadExplain]);
 
   // ===== Open brief modal =====
   const handleOpenBrief = useCallback(async () => {
@@ -418,8 +430,6 @@ export default function Home() {
     <div className="h-screen w-screen overflow-hidden bg-zinc-950 flex flex-col">
       {/* Top controls bar */}
       <ControlsBar
-        aiEnabled={aiEnabled}
-        onToggleAI={() => setAIEnabled((prev) => !prev)}
         onRefresh={handleRefresh}
         onOpenBrief={handleOpenBrief}
         lastUpdated={lastUpdated}
@@ -482,7 +492,6 @@ export default function Home() {
                 isLoading={aiLoading}
                 hasRun={aiHasRun}
                 onRunAI={handleRunAI}
-                aiEnabled={aiEnabled}
                 canRun={!!(incident && weather && riskScore && cards.length)}
               />
             </TabsContent>
