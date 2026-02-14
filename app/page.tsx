@@ -67,10 +67,6 @@ export default function Home() {
   const [aiInsights, setAIInsights] = useState<AIInsight[]>([]);
   const [aiLoading, setAILoading] = useState(false);
 
-  // AI insights state
-  const [aiInsights, setAIInsights] = useState<AIInsight[]>([]);
-  const [aiLoading, setAILoading] = useState(false);
-
   // ===== Live-specific display data =====
   const [liveCalfire, setLiveCalfire] = useState<EnrichedIncident["calfire"] | null>(null);
   const [liveNws, setLiveNws] = useState<NwsEnrichment | null>(null);
