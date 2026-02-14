@@ -14,7 +14,7 @@ import {
 } from "./types";
 import { distanceKm, pointInPolygon, minDistToPolygon } from "./geo";
 import { computeRiskScore } from "./risk";
-import { findRelevantIAPs } from "./iap-matching";
+import { findRelevantIAPs } from "./iap";
 import { getTerrainMetrics, calculateSlopeSpreadMultiplier, assessTerrainTacticalValue } from "./terrain";
 
 const ASSET_BUFFER_KM = 1.0; // Buffer zone around assets

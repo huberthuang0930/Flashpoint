@@ -1,6 +1,6 @@
 import type { Incident, Weather } from "./types";
-import type { HistoricalIncident } from "./ai-service";
-import incidents from "@/data/historical/incidents.json";
+import type { HistoricalIncident } from "./ai";
+import { loadHistoricalIncidents } from "./data-loaders";
 
 interface ScoredIncident {
   incident: HistoricalIncident;
@@ -70,7 +70,7 @@ export function findSimilarIncidents(
   current: Incident,
   weather: Weather
 ): HistoricalIncident[] {
-  const historicalIncidents = incidents.incidents as HistoricalIncident[];
+  const historicalIncidents = loadHistoricalIncidents();
 
   if (!historicalIncidents || historicalIncidents.length === 0) {
     console.warn("No historical incidents data available");

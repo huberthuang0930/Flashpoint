@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateAIInsights } from "@/lib/ai-service";
+import { generateAIInsights } from "@/lib/ai";
 import { findSimilarIncidents } from "@/lib/historical-data";
 import type { Incident, Weather, RiskScore, ActionCard } from "@/lib/types";
 
