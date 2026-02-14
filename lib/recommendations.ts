@@ -9,9 +9,13 @@ import {
   RecommendationsResult,
   WindShift,
   Confidence,
+  IAPInsight,
+  TerrainMetrics,
 } from "./types";
 import { distanceKm, pointInPolygon, minDistToPolygon } from "./geo";
 import { computeRiskScore } from "./risk";
+import { findRelevantIAPs } from "./iap-matching";
+import { getTerrainMetrics, calculateSlopeSpreadMultiplier, assessTerrainTacticalValue } from "./terrain";
 
 const ASSET_BUFFER_KM = 1.0; // Buffer zone around assets
 
@@ -133,7 +137,19 @@ function generateEvacuationCard(
     actions.push("Pre-stage evacuation messaging");
   }
 
-  return { type: "evacuation", title, timing, confidence, why, actions };
+  // Add IAP insights (weather-focused for evacuation card)
+  let iapInsights: IAPInsight[] | undefined;
+  try {
+    iapInsights = findRelevantIAPs(incident, weather, "evacuation");
+    if (iapInsights.length === 0) {
+      iapInsights = undefined;
+    }
+  } catch (error) {
+    console.warn("IAP matching failed for evacuation:", error);
+    iapInsights = undefined;
+  }
+
+  return { type: "evacuation", title, timing, confidence, why, actions, iapInsights };
 }
 
 /**
@@ -204,19 +220,31 @@ function generateResourcesCard(
     );
   }
 
-  return { type: "resources", title, timing, confidence, why, actions };
+  // Add IAP insights (previous-fire-outcomes focused for resources card)
+  let iapInsights: IAPInsight[] | undefined;
+  try {
+    iapInsights = findRelevantIAPs(incident, weather, "resources");
+    if (iapInsights.length === 0) {
+      iapInsights = undefined;
+    }
+  } catch (error) {
+    console.warn("IAP matching failed for resources:", error);
+    iapInsights = undefined;
+  }
+
+  return { type: "resources", title, timing, confidence, why, actions, iapInsights };
 }
 
 /**
  * Generate the Tactics action card.
  */
-function generateTacticsCard(
+async function generateTacticsCard(
   incident: Incident,
   weather: Weather,
   resources: Resources,
   spreadRateKmH: number,
   windShift?: WindShift
-): ActionCard {
+): Promise<ActionCard> {
   const spreadDir = (weather.windDirDeg + 180) % 360;
   const rightFlankDir = (spreadDir + 90) % 360;
   const leftFlankDir = (spreadDir - 90 + 360) % 360;
@@ -253,13 +281,55 @@ function generateTacticsCard(
 
   actions.push("Maintain escape routes for all personnel");
 
-  return { type: "tactics", title, timing, confidence, why, actions };
+  // Get terrain data and add terrain-aware recommendations
+  let terrain: TerrainMetrics | undefined;
+  try {
+    terrain = await getTerrainMetrics(incident.lat, incident.lon);
+
+    // Add terrain-specific tactical recommendations
+    if (terrain.slope > 20) {
+      why.push(`${terrain.slope.toFixed(0)}% slope - fire spreads ${calculateSlopeSpreadMultiplier(terrain.slope).toFixed(1)}x faster uphill`);
+      actions.push("Position resources on flanks or downslope, avoid positioning directly uphill");
+    }
+
+    if (terrain.nearbyRidgeline && terrain.ridgelineDistKm && terrain.ridgelineDistKm < 2) {
+      why.push(`Ridgeline ${terrain.ridgelineDistKm.toFixed(1)}km ${terrain.ridgelineDirection} - potential control line`);
+      actions.push(`Consider indirect attack anchored on ridgeline to ${terrain.ridgelineDirection}`);
+    }
+
+    if (["S", "SW", "SE"].includes(terrain.aspect) && terrain.slope > 15) {
+      why.push(`${terrain.aspect}-facing slope with ${terrain.slope.toFixed(0)}% grade - expect drier fuels and aggressive behavior`);
+    }
+
+    // Assess tactical value
+    const tactical = assessTerrainTacticalValue(terrain);
+    if (tactical.hazards.length > 0 && tactical.hazards[0].includes("Extreme slopes")) {
+      actions.push("Brief crews on steep slope hazards - verify escape routes and safety zones");
+    }
+  } catch (error) {
+    console.warn("Terrain analysis failed:", error);
+    terrain = undefined;
+  }
+
+  // Add IAP insights (enhanced with terrain data for better matching)
+  let iapInsights: IAPInsight[] | undefined;
+  try {
+    iapInsights = findRelevantIAPs(incident, weather, "tactics", terrain);
+    if (iapInsights.length === 0) {
+      iapInsights = undefined; // Don't include empty array
+    }
+  } catch (error) {
+    console.warn("IAP matching failed:", error);
+    iapInsights = undefined; // Graceful degradation
+  }
+
+  return { type: "tactics", title, timing, confidence, why, actions, iapInsights };
 }
 
 /**
  * Generate all 3 action cards + brief + risk score.
  */
-export function generateRecommendations(
+export async function generateRecommendations(
   incident: Incident,
   weather: Weather,
   envelopes: SpreadEnvelope[],
@@ -267,7 +337,7 @@ export function generateRecommendations(
   resources: Resources,
   spreadRateKmH: number,
   windShift?: WindShift
-): RecommendationsResult {
+): Promise<RecommendationsResult> {
   // Find assets at risk
   const assetsAtRisk = findAssetsAtRisk(assets, envelopes);
 
@@ -298,7 +368,7 @@ export function generateRecommendations(
     envelopes
   );
 
-  const tacticsCard = generateTacticsCard(
+  const tacticsCard = await generateTacticsCard(
     incident,
     weather,
     resources,

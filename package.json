@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "process-perimeters": "tsx scripts/process-perimeters.ts",
+    "process-iaps": "tsx scripts/process-iaps.ts",
     "test": "vitest"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "mapbox-gl": "^3.18.1",
     "next": "16.1.6",
     "papaparse": "^5.5.3",
+    "pdf-parse": "^1.1.1",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -31,6 +33,7 @@
     "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
+    "@types/pdf-parse": "^1.1.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

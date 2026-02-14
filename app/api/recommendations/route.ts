@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = generateRecommendations(
+    const result = await generateRecommendations(
       incident,
       weather,
       envelopes,

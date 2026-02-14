@@ -66,6 +66,21 @@ export interface SpreadResult {
   };
 }
 
+// ===== Terrain Types =====
+
+export interface TerrainMetrics {
+  elevation: number; // meters above sea level
+  slope: number; // percentage (0-100+)
+  slopeAngle: number; // degrees (0-90)
+  aspect: string; // cardinal direction: "N", "NE", "E", "SE", "S", "SW", "W", "NW", or "flat"
+  aspectDegrees: number; // degrees from north (0-360)
+  nearbyRidgeline: boolean; // is there a ridgeline within 2km?
+  ridgelineDistKm?: number; // distance to nearest ridgeline
+  ridgelineDirection?: string; // direction to ridgeline: "N", "E", "S", "W"
+  terrainType: "flat" | "gentle" | "moderate" | "steep" | "extreme"; // categorized slope
+  notes: string[]; // tactical notes about terrain
+}
+
 // ===== Risk Types =====
 
 export interface RiskBreakdown {
@@ -80,6 +95,48 @@ export interface RiskScore {
   label: "low" | "moderate" | "high" | "extreme";
 }
 
+// ===== IAP (Incident Action Plan) Types =====
+
+export interface IAPSection {
+  type: "ICS-202" | "ICS-203" | "ICS-204" | "ICS-205" | "ICS-220" | "general";
+  content: string;
+  extractedData?: {
+    objectives?: string[];
+    resources?: string[];
+    airTactics?: string[];
+  };
+}
+
+export interface IAPData {
+  id: string;
+  incidentName: string;
+  dateCreated: string;
+  location: {
+    state: string;
+    county?: string;
+  };
+  conditions: {
+    fuel?: "grass" | "brush" | "mixed" | "chaparral";
+    weather?: {
+      windSpeedMps?: number;
+      humidityPct?: number;
+    };
+    acres?: number;
+  };
+  sections: IAPSection[];
+  tacticalLessons: string[];
+  rawText?: string;
+}
+
+export interface IAPInsight {
+  iapId: string;
+  iapName: string;
+  relevanceScore: number;
+  tacticalSnippet: string;
+  sectionType: string;
+  reasoning: string[];
+}
+
 // ===== Recommendation Types =====
 
 export type CardType = "evacuation" | "resources" | "tactics";
@@ -92,6 +149,7 @@ export interface ActionCard {
   confidence: Confidence;
   why: string[];
   actions: string[];
+  iapInsights?: IAPInsight[]; // Optional IAP insights from similar historical incidents
 }
 
 export interface Brief {

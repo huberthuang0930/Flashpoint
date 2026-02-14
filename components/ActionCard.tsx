@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ActionCard as ActionCardType } from "@/lib/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ export default function ActionCardComponent({
   card,
   index,
 }: ActionCardComponentProps) {
+  const [iapExpanded, setIapExpanded] = useState(false);
   const config = TYPE_CONFIG[card.type] || TYPE_CONFIG.tactics;
   const confidenceBadge = CONFIDENCE_BADGE[card.confidence] || CONFIDENCE_BADGE.medium;
 
@@ -117,6 +119,69 @@ export default function ActionCardComponent({
             ))}
           </ul>
         </div>
+
+        {/* IAP Insights - More Details Section */}
+        {card.iapInsights && card.iapInsights.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-zinc-700">
+            <button
+              onClick={() => setIapExpanded(!iapExpanded)}
+              className="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5 transition-colors"
+            >
+              <span className="text-[10px]">{iapExpanded ? "▼" : "▶"}</span>
+              <span>
+                {card.type === "evacuation" && "Weather Impacts (from similar IAPs)"}
+                {card.type === "resources" && "Previous Fire Patterns (from similar IAPs)"}
+                {card.type === "tactics" && "Terrain Impacts (from similar IAPs)"}
+              </span>
+            </button>
+
+            {iapExpanded && (
+              <div className={`mt-3 space-y-3 pl-1 border-l-2 ${
+                card.type === "evacuation" ? "border-red-700" :
+                card.type === "resources" ? "border-blue-700" :
+                "border-amber-700"
+              }`}>
+                {card.iapInsights.map((insight, i) => (
+                  <div key={i} className="pl-3 space-y-1">
+                    {/* IAP Name and Match Score */}
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-semibold ${
+                        card.type === "evacuation" ? "text-red-400" :
+                        card.type === "resources" ? "text-blue-400" :
+                        "text-amber-400"
+                      }`}>
+                        {insight.iapName}
+                      </span>
+                      <span className="text-[9px] text-zinc-500">
+                        ({insight.relevanceScore}% match)
+                      </span>
+                    </div>
+
+                    {/* Tactical Snippet */}
+                    <p className="text-xs text-zinc-300 leading-relaxed">
+                      {insight.tacticalSnippet}
+                    </p>
+
+                    {/* Reasoning */}
+                    <div className="text-[10px] text-zinc-500 space-y-0.5">
+                      {insight.reasoning.map((reason, j) => (
+                        <div key={j} className="flex items-start gap-1.5">
+                          <span className="shrink-0 text-zinc-600">•</span>
+                          <span>{reason}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Section Source */}
+                    <div className="text-[9px] text-zinc-600 italic">
+                      Source: {insight.sectionType}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
