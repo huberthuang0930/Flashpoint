@@ -5,6 +5,11 @@ import type {
   RiskScore,
   ActionCard,
 } from "./types";
+import {
+  predictSpreadPattern,
+  calculateSpreadStatistics,
+  type DirectionalSpread,
+} from "./directional-spread";
 
 // AI Insight types (will be added to types.ts)
 export interface HistoricalIncident {
@@ -44,6 +49,20 @@ export interface AIInsightRequest {
   spreadRate: number;
   cards: ActionCard[];
   historicalContext: HistoricalIncident[];
+  directionalSpread?: {
+    similarFires: DirectionalSpread[];
+    prediction: {
+      likelyDirection: string;
+      expectedRates: {
+        north: number;
+        south: number;
+        east: number;
+        west: number;
+      };
+      confidence: "high" | "medium" | "low";
+      reasoning: string[];
+    };
+  };
 }
 
 // Simple in-memory cache with 5-minute TTL
@@ -82,7 +101,7 @@ function checkRateLimit(): boolean {
 }
 
 function buildPrompt(request: AIInsightRequest): string {
-  const { incident, weather, riskScore, spreadRate, historicalContext } = request;
+  const { incident, weather, riskScore, spreadRate, historicalContext, directionalSpread } = request;
 
   const evacuationCard = request.cards.find(c => c.type === "evacuation");
   const assetsAtRisk = evacuationCard?.why
@@ -94,6 +113,22 @@ function buildPrompt(request: AIInsightRequest): string {
         `- ${h.name} (${h.date}): ${h.fuel} fire, wind ${h.weather.windSpeedMps} m/s, humidity ${h.weather.humidityPct}%, ${h.outcome} in ${h.containmentTimeHours}h, ${h.finalAcres} acres. Lesson: ${h.keyLesson}`
       ).join("\n")
     : "No similar historical incidents found";
+
+  // Add directional spread analysis
+  let directionalSpreadSummary = "No directional spread data available";
+  if (directionalSpread && directionalSpread.similarFires.length > 0) {
+    const { prediction, similarFires } = directionalSpread;
+    const stats = calculateSpreadStatistics(similarFires);
+
+    directionalSpreadSummary = `
+DIRECTIONAL SPREAD ANALYSIS (${similarFires.length} similar fires within 100km):
+- Dominant historical direction: ${stats.dominantDirection}
+- Predicted likely direction: ${prediction.likelyDirection} (confidence: ${prediction.confidence})
+- Expected expansion rates: N ${prediction.expectedRates.north.toFixed(2)} km/h, S ${prediction.expectedRates.south.toFixed(2)} km/h, E ${prediction.expectedRates.east.toFixed(2)} km/h, W ${prediction.expectedRates.west.toFixed(2)} km/h
+- Average shape elongation: ${stats.avgElongation.toFixed(1)}x (1.0 = circular, >1.0 = elongated)
+- Pattern reasoning: ${prediction.reasoning.join("; ")}
+- Sample fires: ${similarFires.slice(0, 3).map(f => `${f.fireName} (${f.year}, ${f.acres.toFixed(0)} acres, ${f.shape.dominantDirection} spread)`).join(", ")}`;
+  }
 
   return `You are a wildfire behavior analyst assisting an incident commander during initial attack (0-3 hours). Your role is to translate technical data into actionable, time-sensitive insights.
 
@@ -109,10 +144,12 @@ CURRENT SITUATION:
 HISTORICAL CONTEXT (${historicalContext.length} similar incidents):
 ${historicalSummary}
 
+${directionalSpreadSummary}
+
 TASK: Generate 2-3 natural language insights for the incident commander:
-1. Time-critical threats ("In X hours/minutes, Y will happen" - use specific timing)
-2. Historical patterns ("In similar conditions, Z% of fires..." - use statistics from historical data)
-3. Resource recommendations with context ("Air support reduces escape by X%" - backed by historical outcomes)
+1. Time-critical threats with directional specificity ("Fire will reach X to the NORTH in Y hours based on Z km/h spread rate" - use directional spread data)
+2. Historical patterns ("In similar conditions, fires spread Z km/h to the EAST..." - use statistics from directional spread analysis)
+3. Resource recommendations with context ("Air support reduces escape by X%" - backed by historical outcomes and spread patterns)
 
 REQUIREMENTS:
 - Each insight message: 15-25 words, direct, actionable
@@ -167,6 +204,20 @@ export async function generateAIInsights(
     if (!apiKey || apiKey === "your_anthropic_api_key_here") {
       console.warn("Anthropic API key not configured");
       return [];
+    }
+
+    // Selectively retrieve directional spread data if not provided
+    if (!request.directionalSpread) {
+      try {
+        const spreadPattern = predictSpreadPattern(
+          request.incident,
+          request.weather.windDirDeg
+        );
+        request.directionalSpread = spreadPattern;
+      } catch (error) {
+        console.warn("Could not retrieve directional spread data:", error);
+        // Continue without directional spread data
+      }
     }
 
     const client = new Anthropic({
