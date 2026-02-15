@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchFirmsHotspots, type FirmsSource } from "@/lib/firms";
 import { clusterHotspots, clusterToEnrichedIncident } from "@/lib/cluster";
 import { getNwsEnrichment } from "@/lib/nws";
+import { isInCalifornia } from "@/lib/ca-boundary";
 import type { FirmsHotspot } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -35,18 +36,27 @@ export async function GET(req: Request) {
     }
 
     // 1. Fetch FIRMS hotspots
-    const hotspots = await fetchFirmsHotspots({ bbox, days, sources });
+    const allHotspots = await fetchFirmsHotspots({ bbox, days, sources });
 
-    // 2. Cluster into fire events
+    // 2. Filter to only include hotspots within California's borders
+    const hotspots = allHotspots.filter((hs) =>
+      isInCalifornia(hs.latitude, hs.longitude)
+    );
+
+    console.log(
+      `[Live] Filtered ${allHotspots.length} hotspots to ${hotspots.length} within CA borders`
+    );
+
+    // 3. Cluster into fire events
     const clusters = clusterHotspots(hotspots);
     const topClusters = clusters.slice(0, limit);
 
-    // 3. Convert to EnrichedIncident[]
+    // 4. Convert to EnrichedIncident[]
     const enriched = topClusters.map((cluster, idx) =>
       clusterToEnrichedIncident(cluster, idx)
     );
 
-    // 4. Enrich top N with NWS data (parallel, error-tolerant)
+    // 5. Enrich top N with NWS data (parallel, error-tolerant)
     const nwsTargets = enriched.slice(0, nwsEnrichCount);
     await Promise.all(
       nwsTargets.map(async (item) => {
@@ -64,7 +74,7 @@ export async function GET(req: Request) {
       })
     );
 
-    // 5. Also return raw hotspot coordinates for map heat layer
+    // 6. Also return raw hotspot coordinates for map heat layer
     const hotspotPoints: { lat: number; lon: number; frp: number }[] =
       hotspots.map((hs: FirmsHotspot) => ({
         lat: hs.latitude,

@@ -89,7 +89,7 @@ export default function Home() {
     setLiveLoading(true);
     try {
       console.log('[Live Mode] Fetching NASA FIRMS fire data for California...');
-      const res = await fetch("/api/fires/live?days=2&sources=VIIRS_SNPP_NRT,VIIRS_NOAA20_NRT&limit=20&nwsEnrich=3&bbox=-124.5,32.5,-114.6,42.0");
+      const res = await fetch("/api/fires/live?days=2&sources=VIIRS_SNPP_NRT,VIIRS_NOAA20_NRT&limit=20&nwsEnrich=3&bbox=-125.0,32.0,-114.0,42.5");
       const data = await res.json();
       const incidents: EnrichedIncident[] = data.incidents || [];
       console.log(`[Live Mode] Loaded ${incidents.length} fire incidents from NASA FIRMS`);

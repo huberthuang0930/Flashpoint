@@ -130,7 +130,7 @@ export default function MapView({ incident, envelopes, assets, perimeterPolygon,
         bearing: 0,
       });
 
-      map.addControl(new mapboxgl.NavigationControl(), "top-left");
+      map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
 
       map.on("load", () => {
         console.log("[MapView] Map loaded successfully");

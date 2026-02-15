@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InitialAttack IC Assist",
-  description: "Wildfire incident commander decision support — 3 decisions in 10 seconds for the first 0-3 hours of initial attack.",
+  title: "Flashpoint - AI Command for Wildfire Response",
+  description: "Real-time wildfire intelligence for incident commanders. Fuses NASA satellites, CAL FIRE data, and NWS alerts with AI-powered spread prediction and decision support.",
 };
 
 export default function RootLayout({
