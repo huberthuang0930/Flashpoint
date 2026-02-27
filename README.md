@@ -2,6 +2,8 @@
 
 > AI-powered wildfire command for the critical first 0–3 hours
 
+🏆 **TreeHacks 2026 Winner, Stanford Ecopreneurship Track**
+
 **Flashpoint** is an AI-native incident command decision support system for initial attack wildfire response. Built for California wildfires, it combines real-time satellite fire detection, physics-based spread modeling, and Claude AI insights to deliver actionable intelligence in seconds.
 
 ## Core Capabilities
