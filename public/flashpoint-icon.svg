@@ -1,0 +1,58 @@
+<svg
+  width="64"
+  height="64"
+  viewBox="0 0 24 24"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Outer glow ring -->
+  <circle
+    cx="12"
+    cy="12"
+    r="10"
+    stroke="url(#glowGradient)"
+    stroke-width="0.5"
+    opacity="0.6"
+  />
+
+  <!-- Main flame/spark burst -->
+  <path
+    d="M12 3 L13.5 8 L18 7 L14 11 L16 15 L12 13 L8 15 L10 11 L6 7 L10.5 8 Z"
+    fill="url(#flameGradient)"
+    filter="drop-shadow(0 0 4px rgba(255, 140, 0, 0.5))"
+  />
+
+  <!-- Central hotspot -->
+  <circle
+    cx="12"
+    cy="11"
+    r="2.5"
+    fill="url(#hotspotGradient)"
+  />
+
+  <!-- Energy lines -->
+  <line x1="12" y1="2" x2="12" y2="5" stroke="#FF8C00" stroke-width="1" opacity="0.8" stroke-linecap="round"/>
+  <line x1="12" y1="19" x2="12" y2="22" stroke="#FF6B00" stroke-width="1" opacity="0.6" stroke-linecap="round"/>
+  <line x1="2" y1="12" x2="5" y2="12" stroke="#FF8C00" stroke-width="1" opacity="0.8" stroke-linecap="round"/>
+  <line x1="19" y1="12" x2="22" y2="12" stroke="#FF6B00" stroke-width="1" opacity="0.6" stroke-linecap="round"/>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="flameGradient" x1="12" y1="3" x2="12" y2="15">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="50%" stop-color="#FF8C00" />
+      <stop offset="100%" stop-color="#FF4500" />
+    </linearGradient>
+
+    <radialGradient id="hotspotGradient" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="50%" stop-color="#FFD700" />
+      <stop offset="100%" stop-color="#FF8C00" />
+    </radialGradient>
+
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00" />
+      <stop offset="100%" stop-color="#FF4500" />
+    </linearGradient>
+  </defs>
+</svg>
